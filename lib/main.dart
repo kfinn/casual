@@ -32,21 +32,17 @@ Future<void> main() async {
   };
   final peerConnection = await createPeerConnection(peerConfig, {});
   peerConnection.addStream(localStream);
-  peerConnection.onIceCandidate = (_) {};
-  peerConnection.onIceConnectionState = (_) {};
-  peerConnection.onIceGatheringState = (_) {};
+  peerConnection.onIceCandidate = print;
+  peerConnection.onIceConnectionState = print;
+  peerConnection.onIceGatheringState = print;
 
-  final offerConstraints = {
+  final sessionContraints = {
     'mandatory': {
       'OfferToReceiveAudio': true,
       'OfferToReceiveVideo': true,
     },
     'optional': [],
   };
-  final offer = await peerConnection.createOffer(offerConstraints);
-
-  peerConnection.setLocalDescription(offer);
-
   final authCredentials = base64Encode(
     utf8.encode('${env["USERNAME"]}:${env["PASSWORD"]}'),
   );
@@ -74,16 +70,22 @@ Future<void> main() async {
     channelParams: {'id': roomId},
     onSubscribed: () => print('subscribed to room'),
     onDisconnected: () => print('disconnected from room'),
-    onMessage: (message) {
+    onMessage: (message) async {
       switch (message['event_type']) {
         case 'membership_created':
+          final offer = await peerConnection.createOffer(sessionContraints);
+          await peerConnection.setLocalDescription(offer);
+
           cable.performAction(
             'Room',
             action: 'create_offer',
             channelParams: {'id': roomId},
             actionParams: {
               'to_membership_id': message['payload']['membership_id'],
-              'sdp': offer.sdp,
+              'offer': {
+                'sdp': offer.sdp,
+                'type': offer.type,
+              },
             },
           );
           break;
@@ -92,22 +94,41 @@ Future<void> main() async {
           break;
 
         case 'offer_created':
+          final payload = message['payload'];
+          final offer = RTCSessionDescription(
+            payload['offer']['sdp'],
+            payload['offer']['type'],
+          );
+          await peerConnection.setRemoteDescription(offer);
+
+          final answer = await peerConnection.createAnswer(sessionContraints);
+          await peerConnection.setLocalDescription(answer);
+
+          cable.performAction(
+            'Room',
+            action: 'create_answer',
+            channelParams: {'id': roomId},
+            actionParams: {
+              'to_membership_id': payload['membership_id'],
+              'answer': {
+                'sdp': answer.sdp,
+                'type': answer.type,
+              },
+            },
+          );
           break;
 
         case 'answer_created':
+          final payload = message['payload'];
+          final answer = RTCSessionDescription(
+            payload['answer']['sdp'],
+            payload['answer']['type'],
+          );
+          await peerConnection.setRemoteDescription(answer);
           break;
       }
     },
   );
-
-  // send offer to signaling server...
-  // _send('offer', {
-  //   'to': id,
-  //   'from': _selfId,
-  //   'description': {'sdp': s.sdp, 'type': s.type},
-  //   'session_id': this._sessionId,
-  //   'media': media,
-  // });
 
   final localRenderer = RTCVideoRenderer();
   await localRenderer.initialize();
