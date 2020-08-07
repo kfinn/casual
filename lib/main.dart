@@ -1,6 +1,5 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:arkit_plugin/arkit_plugin.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -9,15 +8,13 @@ Future<void> main() async {
   final firstCamera = cameras.first;
 
   runApp(MaterialApp(
-    theme: ThemeData.dark(),
-    home: CameraScreen(camera: firstCamera)
-  ));
+      theme: ThemeData.dark(), home: CameraScreen(camera: firstCamera)));
 }
 
 class CameraScreen extends StatefulWidget {
   final CameraDescription camera;
 
-  const CameraScreen({ Key key, @required this.camera }) : super(key: key);
+  const CameraScreen({Key key, @required this.camera}) : super(key: key);
 
   @override
   CameraScreenState createState() => CameraScreenState();

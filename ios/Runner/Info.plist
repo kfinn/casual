@@ -41,9 +41,5 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
-	<key>io.flutter.embedded_views_preview</key>
-    <string>YES</string>
-    <key>NSCameraUsageDescription</key>
-    <string>Video chat</string>
 </dict>
 </plist>

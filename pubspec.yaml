@@ -9,7 +9,6 @@ environment:
   sdk: ">=2.7.0 <3.0.0"
 
 dependencies:
-  arkit_plugin: ^0.5.1
   camera:
   flutter:
     sdk: flutter
