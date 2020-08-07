@@ -113,7 +113,7 @@ Future<void> main() async {
             action: 'create_answer',
             channelParams: {'id': roomId},
             actionParams: {
-              'to_membership_id': payload['membership_id'],
+              'to_membership_id': payload['from_membership_id'],
               'answer': {
                 'sdp': answer.sdp,
                 'type': answer.type,
@@ -124,6 +124,7 @@ Future<void> main() async {
 
         case 'answer_created':
           final payload = message['payload'];
+          // TODO: lookup membership id with payload['from_membership_id'],
           final answer = RTCSessionDescription(
             payload['answer']['sdp'],
             payload['answer']['type'],
