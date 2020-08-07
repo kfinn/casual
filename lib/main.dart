@@ -5,10 +5,15 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final cameras = await availableCameras();
-  final firstCamera = cameras.first;
+  final firstCamera =
+      cameras.firstWhere((c) => c.lensDirection == CameraLensDirection.front);
 
-  runApp(MaterialApp(
-      theme: ThemeData.dark(), home: CameraScreen(camera: firstCamera)));
+  runApp(
+    MaterialApp(
+      theme: ThemeData.dark(),
+      home: CameraScreen(camera: firstCamera),
+    ),
+  );
 }
 
 class CameraScreen extends StatefulWidget {
