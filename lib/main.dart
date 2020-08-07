@@ -71,8 +71,11 @@ Future<void> main() async {
     onSubscribed: () => print('subscribed to room'),
     onDisconnected: () => print('disconnected from room'),
     onMessage: (message) async {
-      switch (message['event_type']) {
+      print(message.toString());
+
+      switch (message['event']) {
         case 'membership_created':
+          final payload = message['payload'];
           final offer = await peerConnection.createOffer(sessionContraints);
           await peerConnection.setLocalDescription(offer);
 
@@ -81,7 +84,7 @@ Future<void> main() async {
             action: 'create_offer',
             channelParams: {'id': roomId},
             actionParams: {
-              'to_membership_id': message['payload']['membership_id'],
+              'to_membership_id': payload['membership_id'],
               'offer': {
                 'sdp': offer.sdp,
                 'type': offer.type,
@@ -91,6 +94,7 @@ Future<void> main() async {
           break;
 
         case 'membership_destroyed':
+          // TODO: clean up peer connection for membership_id
           break;
 
         case 'offer_created':
