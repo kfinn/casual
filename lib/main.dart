@@ -32,7 +32,7 @@ Future<void> main() async {
   };
   final peerConnection = await createPeerConnection(peerConfig, {});
   peerConnection.addStream(localStream);
-  peerConnection.onIceCandidate = print;
+  peerConnection.onIceCandidate = (candidate) => print(candidate.toMap());
   peerConnection.onIceConnectionState = print;
   peerConnection.onIceGatheringState = print;
 
