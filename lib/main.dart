@@ -108,7 +108,10 @@ class Room {
       payload['candidate']['sdp_mid'],
       payload['candidate']['sdp_mline_index'],
     );
-    final hasRemoteDescription = ['have-local-pranswer', 'have-remote-pranswer'].contains(peerConnection.signalingState);
+    final hasRemoteDescription = [
+      RTCSignalingState.RTCSignalingStateHaveLocalPrAnswer,
+      RTCSignalingState.RTCSignalingStateHaveRemotePrAnswer
+    ].contains(peerConnection.signalingState);
     if (hasRemoteDescription) {
       await peerConnection.addCandidate(candidate);
     } else {
@@ -228,8 +231,6 @@ class Room {
   }
 }
 
-
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await DotEnv().load('config/.env.local');
@@ -295,7 +296,8 @@ class HomeScreen extends HookWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('casual')),
-      body: RTCVideoView(localRenderer),
+      // body: RTCVideoView(localRenderer),
+      body: Text('something'),
     );
   }
 }
