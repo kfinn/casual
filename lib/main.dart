@@ -48,14 +48,23 @@ class Room {
     );
   }
 
+  Future<void> membershipDestroyed(Map<String, dynamic> payload) async {
+    final membershipId = payload['membership_id'];
+    final peerConnection = _findPeerConnection(membershipId);
+    if (peerConnection != null) {
+      await peerConnection.close();
+      _removePeerConnection(membershipId);
+    }
+  }
+
   Future<void> offerCreated(Map<String, dynamic> payload) async {
+    final membershipId = payload['from_membership_id'];
+    final peerConnection = await _findOrCreatePeerConnnection(membershipId);
+
     final offer = RTCSessionDescription(
       payload['offer']['sdp'],
       payload['offer']['type'],
     );
-    final membershipId = payload['from_membership_id'];
-    final peerConnection = await _findOrCreatePeerConnnection(membershipId);
-
     await peerConnection.setRemoteDescription(offer);
 
     final answer = await peerConnection.createAnswer(sessionContraints);
@@ -113,7 +122,7 @@ class Room {
             break;
 
           case 'membership_destroyed':
-            // TODO: clean up peer connection for membership_id
+            membershipDestroyed(message['payload']);
             break;
 
           case 'offer_created':
@@ -132,10 +141,18 @@ class Room {
     );
   }
 
+  RTCPeerConnection _removePeerConnection(String membershipId) {
+    return connections.remove(membershipId);
+  }
+
+  RTCPeerConnection _findPeerConnection(String membershipId) {
+    return connections[membershipId];
+  }
+
   Future<RTCPeerConnection> _findOrCreatePeerConnnection(
     String membershipId,
   ) async {
-    RTCPeerConnection peerConnection = connections[membershipId];
+    RTCPeerConnection peerConnection = _findPeerConnection(membershipId);
 
     if (peerConnection != null) {
       return peerConnection;
@@ -148,7 +165,7 @@ class Room {
       print(candidate.toMap());
       cable.performAction(
         'Room',
-        action: 'create_answer',
+        action: 'create_ice_candidate',
         channelParams: {'id': roomId},
         actionParams: {
           'to_membership_id': membershipId,
@@ -162,6 +179,24 @@ class Room {
     };
     peerConnection.onIceConnectionState = print;
     peerConnection.onIceGatheringState = print;
+    peerConnection.onAddStream =
+        (stream) => print('onAddStream: streamId:${stream.id}');
+    peerConnection.onRemoveStream =
+        (stream) => print('onRemoveStream: streamId:${stream.id}');
+    peerConnection.onAddTrack = (stream, track) => print(
+          'onAddTrack: streamId:${stream.id}' +
+              ',trackId:${track.id}' +
+              ',trackEnabled:${track.enabled}' +
+              ',trackKind:${track.kind}' +
+              ',trackLabel:${track.label}',
+        );
+    peerConnection.onRemoveTrack = (stream, track) => print(
+          'onRemoveTrack: streamId:${stream.id}' +
+              ',trackId:${track.id}' +
+              ',trackEnabled:${track.enabled}' +
+              ',trackKind:${track.kind}' +
+              ',trackLabel:${track.label}',
+        );
 
     return peerConnection;
   }
