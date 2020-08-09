@@ -290,21 +290,73 @@ Future<void> main() async {
   runApp(
     MaterialApp(
       theme: ThemeData.dark(),
-      home: HomeScreen(localRenderer: localRenderer),
+      home: HomeScreen(localRenderer: localRenderer, room: room),
     ),
   );
 }
 
+class PeerVideo extends StatelessWidget {
+  final RTCPeerConnection peerConnection;
+
+  const PeerVideo({Key key, @required this.peerConnection}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final renderer = useState(RTCVideoRenderer());
+    final rendererDidInitialize = useState(false);
+    final stream = useState<MediaStream>();
+
+    useEffect(() {
+      peerConnection.onAddStream = (s) => stream.value = s;
+
+      return () => peerConnection.onAddStream = null;
+    }, [peerConnection]);
+
+    useEffect(() {
+      renderer.value
+          .initialize()
+          .then(() => rendererDidInitialize.value = true);
+    }, [renderer.value]);
+
+    useEffect(() {
+      if (rendererDidInitialize.value) {
+        renderer.value.srcObject = stream.value;
+      }
+    }, [rendererDidInitialize.value, stream.value]);
+
+    if (!rendererDidInitialize.value || stream.value == null) {
+      return Text('Loading...');
+    }
+
+    return RTCVideoView(renderer.value);
+  }
+}
+
 class HomeScreen extends HookWidget {
   final RTCVideoRenderer localRenderer;
+  final Room room;
 
-  const HomeScreen({Key key, @required this.localRenderer}) : super(key: key);
+  const HomeScreen({
+    Key key,
+    @required this.localRenderer,
+    @required this.room,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('casual')),
-      body: RTCVideoView(localRenderer),
+      body: Column(
+        children: [
+          Text('Me:'),
+          RTCVideoView(localRenderer),
+          Text('Them:'),
+          for (final c in room.connections.values) ...[
+            PeerVideo(peerConnection: c),
+            Divider(),
+          ],
+        ],
+      ),
     );
   }
 }
