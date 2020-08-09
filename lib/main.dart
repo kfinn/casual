@@ -174,7 +174,6 @@ class Room {
     peerConnection = await createPeerConnection(peerConfig, {});
     connections[membershipId] = peerConnection;
 
-    // peerConnection.addStream(localStream);
     peerConnection.onIceCandidate = (candidate) {
       // print(candidate.toMap());
       cable.performAction(
@@ -187,32 +186,6 @@ class Room {
             'sdp': candidate.candidate,
             'sdp_mid': candidate.sdpMid,
             'sdp_mline_index': candidate.sdpMlineIndex,
-          },
-        },
-      );
-    };
-    peerConnection.onRenegotiationNeeded = () async {
-      print('inside negotiation needed');
-
-      final offer = await peerConnection.createOffer(sessionContraints);
-
-      if (peerConnection.signalingState !=
-          RTCSignalingState.RTCSignalingStateStable) {
-        print("The connection isn't stable yet; postponing...");
-        return;
-      }
-
-      await peerConnection.setLocalDescription(offer);
-
-      cable.performAction(
-        'Room',
-        action: 'create_offer',
-        channelParams: {'id': roomId},
-        actionParams: {
-          'to_membership_id': membershipId,
-          'offer': {
-            'sdp': offer.sdp,
-            'type': offer.type,
           },
         },
       );
