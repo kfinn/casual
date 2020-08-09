@@ -6,36 +6,15 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_webrtc/webrtc.dart';
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await DotEnv().load('config/.env.local');
-  final env = DotEnv().env;
-
-  final mediaConstraints = {
-    'audio': true,
-    'video': {
-      'mandatory': {
-        'minWidth': '640', // Provide your own width, height and frame rate here
-        'minHeight': '480',
-        'minFrameRate': '30',
-      },
-      'facingMode': 'user',
-      'optional': [],
-    }
-  };
-  final localStream = await navigator.getUserMedia(mediaConstraints);
-
+class Room {
+  final ActionCable cable;
+  final String roomId;
+  final Map<String, RTCPeerConnection> connections = {};
   final peerConfig = {
     'iceServers': [
       {'url': 'stun:stun.l.google.com:19302'},
     ]
   };
-  final peerConnection = await createPeerConnection(peerConfig, {});
-  peerConnection.addStream(localStream);
-  peerConnection.onIceCandidate = (candidate) => print(candidate.toMap());
-  peerConnection.onIceConnectionState = print;
-  peerConnection.onIceGatheringState = print;
-
   final sessionContraints = {
     'mandatory': {
       'OfferToReceiveAudio': true,
@@ -43,6 +22,156 @@ Future<void> main() async {
     },
     'optional': [],
   };
+
+  Room({@required this.cable, @required this.roomId}) {
+    _setupChannel();
+  }
+
+  Future<void> membershipCreated(Map<String, dynamic> payload) async {
+    final membershipId = payload['membership_id'];
+    final peerConnection = await _findOrCreatePeerConnnection(membershipId);
+
+    final offer = await peerConnection.createOffer(sessionContraints);
+    await peerConnection.setLocalDescription(offer);
+
+    cable.performAction(
+      'Room',
+      action: 'create_offer',
+      channelParams: {'id': roomId},
+      actionParams: {
+        'to_membership_id': payload['membership_id'],
+        'offer': {
+          'sdp': offer.sdp,
+          'type': offer.type,
+        },
+      },
+    );
+  }
+
+  Future<void> offerCreated(Map<String, dynamic> payload) async {
+    final offer = RTCSessionDescription(
+      payload['offer']['sdp'],
+      payload['offer']['type'],
+    );
+    final membershipId = payload['from_membership_id'];
+    final peerConnection = await _findOrCreatePeerConnnection(membershipId);
+
+    await peerConnection.setRemoteDescription(offer);
+
+    final answer = await peerConnection.createAnswer(sessionContraints);
+    await peerConnection.setLocalDescription(answer);
+
+    cable.performAction(
+      'Room',
+      action: 'create_answer',
+      channelParams: {'id': roomId},
+      actionParams: {
+        'to_membership_id': payload['from_membership_id'],
+        'answer': {
+          'sdp': answer.sdp,
+          'type': answer.type,
+        },
+      },
+    );
+  }
+
+  Future<void> answerCreated(Map<String, dynamic> payload) async {
+    final membershipId = payload['from_membership_id'];
+    final peerConnection = await _findOrCreatePeerConnnection(membershipId);
+
+    final answer = RTCSessionDescription(
+      payload['answer']['sdp'],
+      payload['answer']['type'],
+    );
+    await peerConnection.setRemoteDescription(answer);
+  }
+
+  Future<void> iceCandidateCreated(Map<String, dynamic> payload) async {
+    final membershipId = payload['from_membership_id'];
+    final peerConnection = await _findOrCreatePeerConnnection(membershipId);
+
+    final candidate = RTCIceCandidate(
+      payload['candidate']['sdp'],
+      payload['candidate']['sdp_mid'],
+      payload['candidate']['sdp_mline_index'],
+    );
+    await peerConnection.addCandidate(candidate);
+  }
+
+  void _setupChannel() {
+    cable.subscribe(
+      'Room',
+      channelParams: {'id': roomId},
+      onSubscribed: () => print('subscribed to room'),
+      onDisconnected: () => print('disconnected from room'),
+      onMessage: (message) async {
+        print(message.toString());
+
+        switch (message['event']) {
+          case 'membership_created':
+            membershipCreated(message['payload']);
+            break;
+
+          case 'membership_destroyed':
+            // TODO: clean up peer connection for membership_id
+            break;
+
+          case 'offer_created':
+            offerCreated(message['payload']);
+            break;
+
+          case 'answer_created':
+            answerCreated(message['payload']);
+            break;
+
+          case 'ice_candidate_created':
+            iceCandidateCreated(message['payload']);
+            break;
+        }
+      },
+    );
+  }
+
+  Future<RTCPeerConnection> _findOrCreatePeerConnnection(
+    String membershipId,
+  ) async {
+    RTCPeerConnection peerConnection = connections[membershipId];
+
+    if (peerConnection != null) {
+      return peerConnection;
+    }
+
+    peerConnection = await createPeerConnection(peerConfig, {});
+
+    // peerConnection.addStream(localStream);
+    peerConnection.onIceCandidate = (candidate) {
+      print(candidate.toMap());
+      cable.performAction(
+        'Room',
+        action: 'create_answer',
+        channelParams: {'id': roomId},
+        actionParams: {
+          'to_membership_id': membershipId,
+          'candidate': {
+            'sdp': candidate.candidate,
+            'sdp_mid': candidate.sdpMid,
+            'sdp_mline_index': candidate.sdpMlineIndex,
+          },
+        },
+      );
+    };
+    peerConnection.onIceConnectionState = print;
+    peerConnection.onIceGatheringState = print;
+
+    return peerConnection;
+  }
+}
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await DotEnv().load('config/.env.local');
+  final env = DotEnv().env;
+
   final authCredentials = base64Encode(
     utf8.encode('${env["USERNAME"]}:${env["PASSWORD"]}'),
   );
@@ -64,80 +193,27 @@ Future<void> main() async {
     },
   );
 
-  final roomId = env['ROOM_ID'];
-  cable.subscribe(
-    'Room',
-    channelParams: {'id': roomId},
-    onSubscribed: () => print('subscribed to room'),
-    onDisconnected: () => print('disconnected from room'),
-    onMessage: (message) async {
-      print(message.toString());
+  final room = Room(cable: cable, roomId: env['ROOM_ID']);
 
-      switch (message['event']) {
-        case 'membership_created':
-          final payload = message['payload'];
-          final offer = await peerConnection.createOffer(sessionContraints);
-          await peerConnection.setLocalDescription(offer);
-
-          cable.performAction(
-            'Room',
-            action: 'create_offer',
-            channelParams: {'id': roomId},
-            actionParams: {
-              'to_membership_id': payload['membership_id'],
-              'offer': {
-                'sdp': offer.sdp,
-                'type': offer.type,
-              },
-            },
-          );
-          break;
-
-        case 'membership_destroyed':
-          // TODO: clean up peer connection for membership_id
-          break;
-
-        case 'offer_created':
-          final payload = message['payload'];
-          final offer = RTCSessionDescription(
-            payload['offer']['sdp'],
-            payload['offer']['type'],
-          );
-          await peerConnection.setRemoteDescription(offer);
-
-          final answer = await peerConnection.createAnswer(sessionContraints);
-          await peerConnection.setLocalDescription(answer);
-
-          cable.performAction(
-            'Room',
-            action: 'create_answer',
-            channelParams: {'id': roomId},
-            actionParams: {
-              'to_membership_id': payload['from_membership_id'],
-              'answer': {
-                'sdp': answer.sdp,
-                'type': answer.type,
-              },
-            },
-          );
-          break;
-
-        case 'answer_created':
-          final payload = message['payload'];
-          // TODO: lookup membership id with payload['from_membership_id'],
-          final answer = RTCSessionDescription(
-            payload['answer']['sdp'],
-            payload['answer']['type'],
-          );
-          await peerConnection.setRemoteDescription(answer);
-          break;
-      }
-    },
-  );
-
+  final mediaConstraints = {
+    'audio': true,
+    'video': {
+      'mandatory': {
+        'minWidth': '640', // Provide your own width, height and frame rate here
+        'minHeight': '480',
+        'minFrameRate': '30',
+      },
+      'facingMode': 'user',
+      'optional': [],
+    }
+  };
+  final localStream = await navigator.getUserMedia(mediaConstraints);
   final localRenderer = RTCVideoRenderer();
   await localRenderer.initialize();
   localRenderer.srcObject = localStream;
+  room.connections.values.forEach((c) {
+    c.addStream(localStream);
+  });
 
   runApp(
     MaterialApp(
