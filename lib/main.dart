@@ -31,7 +31,7 @@ class Room {
 
   Future<void> membershipCreated(Map<String, dynamic> payload) async {
     final membershipId = payload['membership_id'];
-    final peerConnection = await _findOrCreatePeerConnnection(membershipId);
+    final peerConnection = await _findOrCreatePeerConnection(membershipId);
 
     final offer = await peerConnection.createOffer(sessionContraints);
     await peerConnection.setLocalDescription(offer);
@@ -61,7 +61,7 @@ class Room {
 
   Future<void> offerCreated(Map<String, dynamic> payload) async {
     final membershipId = payload['from_membership_id'];
-    final peerConnection = await _findOrCreatePeerConnnection(membershipId);
+    final peerConnection = await _findOrCreatePeerConnection(membershipId);
 
     final offer = RTCSessionDescription(
       payload['offer']['sdp'],
@@ -71,6 +71,7 @@ class Room {
 
     final answer = await peerConnection.createAnswer(sessionContraints);
     await peerConnection.setLocalDescription(answer);
+    await _applyBufferedCandidates(membershipId);
 
     cable.performAction(
       'Room',
@@ -88,30 +89,27 @@ class Room {
 
   Future<void> answerCreated(Map<String, dynamic> payload) async {
     final membershipId = payload['from_membership_id'];
-    final peerConnection = await _findOrCreatePeerConnnection(membershipId);
+    final peerConnection = await _findOrCreatePeerConnection(membershipId);
 
     final answer = RTCSessionDescription(
       payload['answer']['sdp'],
       payload['answer']['type'],
     );
     await peerConnection.setRemoteDescription(answer);
-    final bufferedCandidates = _findOrCreateBufferedCandidates(membershipId);
-    bufferedCandidates.forEach((candidate) async {
-      await peerConnection.addCandidate(candidate);
-    });
+    await _applyBufferedCandidates(membershipId);
   }
 
   Future<void> iceCandidateCreated(Map<String, dynamic> payload) async {
     final membershipId = payload['from_membership_id'];
-    final peerConnection = await _findOrCreatePeerConnnection(membershipId);
+    final peerConnection = await _findOrCreatePeerConnection(membershipId);
 
     final candidate = RTCIceCandidate(
       payload['candidate']['sdp'],
       payload['candidate']['sdp_mid'],
       payload['candidate']['sdp_mline_index'],
     );
-    final remoteDescription = await peerConnection.getRemoteDescription();
-    if (remoteDescription != null) {
+    final hasRemoteDescription = ['have-local-pranswer', 'have-remote-pranswer'].contains(peerConnection.signalingState);
+    if (hasRemoteDescription) {
       await peerConnection.addCandidate(candidate);
     } else {
       final bufferedCandidates = _findOrCreateBufferedCandidates(membershipId);
@@ -161,7 +159,7 @@ class Room {
     return connections[membershipId];
   }
 
-  Future<RTCPeerConnection> _findOrCreatePeerConnnection(
+  Future<RTCPeerConnection> _findOrCreatePeerConnection(
     String membershipId,
   ) async {
     RTCPeerConnection peerConnection = _findPeerConnection(membershipId);
@@ -218,6 +216,15 @@ class Room {
       bufferedCandidatesByMemberId[membershipId] = [];
     }
     return bufferedCandidatesByMemberId[membershipId];
+  }
+
+  Future<void> _applyBufferedCandidates(String membershipId) async {
+    final peerConnection = await _findOrCreatePeerConnection(membershipId);
+    final bufferedCandidates = _findOrCreateBufferedCandidates(membershipId);
+    bufferedCandidates.forEach((candidate) async {
+      await peerConnection.addCandidate(candidate);
+    });
+    bufferedCandidates.clear();
   }
 }
 
