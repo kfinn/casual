@@ -348,13 +348,17 @@ class HomeScreen extends HookWidget {
       appBar: AppBar(title: Text('casual')),
       body: Column(
         children: [
-          Text('Me:'),
-          RTCVideoView(localRenderer),
-          Text('Them:'),
-          for (final c in room.connections.values) ...[
-            PeerVideo(peerConnection: c),
-            Divider(),
-          ],
+          Container(
+            width: 250,
+            height: 250,
+            child: RTCVideoView(localRenderer),
+          ),
+          for (final c in room.connections.values)
+            Container(
+              height: 250,
+              width: 250,
+              child: PeerVideo(peerConnection: c),
+            ),
         ],
       ),
     );
