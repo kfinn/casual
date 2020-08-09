@@ -10,6 +10,8 @@ class Room {
   final ActionCable cable;
   final String roomId;
   final Map<String, RTCPeerConnection> connections = {};
+  final Map<String, List<RTCIceCandidate>> bufferedCandidatesByMemberId = {};
+
   final peerConfig = {
     'iceServers': [
       {'url': 'stun:stun.l.google.com:19302'},
@@ -93,6 +95,10 @@ class Room {
       payload['answer']['type'],
     );
     await peerConnection.setRemoteDescription(answer);
+    final bufferedCandidates = _findOrCreateBufferedCandidates(membershipId);
+    bufferedCandidates.forEach((candidate) async {
+      await peerConnection.addCandidate(candidate);
+    });
   }
 
   Future<void> iceCandidateCreated(Map<String, dynamic> payload) async {
@@ -104,7 +110,13 @@ class Room {
       payload['candidate']['sdp_mid'],
       payload['candidate']['sdp_mline_index'],
     );
-    await peerConnection.addCandidate(candidate);
+    final remoteDescription = await peerConnection.getRemoteDescription();
+    if (remoteDescription != null) {
+      await peerConnection.addCandidate(candidate);
+    } else {
+      final bufferedCandidates = _findOrCreateBufferedCandidates(membershipId);
+      bufferedCandidates.add(candidate);
+    }
   }
 
   void _setupChannel() {
@@ -200,7 +212,16 @@ class Room {
 
     return peerConnection;
   }
+
+  List<RTCIceCandidate> _findOrCreateBufferedCandidates(String membershipId) {
+    if (!bufferedCandidatesByMemberId.containsKey(membershipId)) {
+      bufferedCandidatesByMemberId[membershipId] = [];
+    }
+    return bufferedCandidatesByMemberId[membershipId];
+  }
 }
+
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
