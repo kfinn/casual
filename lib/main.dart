@@ -33,21 +33,21 @@ class Room {
     final membershipId = payload['membership_id'];
     final peerConnection = await _findOrCreatePeerConnection(membershipId);
 
-    // final offer = await peerConnection.createOffer(sessionContraints);
-    // await peerConnection.setLocalDescription(offer);
+    final offer = await peerConnection.createOffer(sessionContraints);
+    await peerConnection.setLocalDescription(offer);
 
-    // cable.performAction(
-    //   'Room',
-    //   action: 'create_offer',
-    //   channelParams: {'id': roomId},
-    //   actionParams: {
-    //     'to_membership_id': payload['membership_id'],
-    //     'offer': {
-    //       'sdp': offer.sdp,
-    //       'type': offer.type,
-    //     },
-    //   },
-    // );
+    cable.performAction(
+      'Room',
+      action: 'create_offer',
+      channelParams: {'id': roomId},
+      actionParams: {
+        'to_membership_id': payload['membership_id'],
+        'offer': {
+          'sdp': offer.sdp,
+          'type': offer.type,
+        },
+      },
+    );
   }
 
   Future<void> membershipDestroyed(Map<String, dynamic> payload) async {
@@ -172,6 +172,7 @@ class Room {
     }
 
     peerConnection = await createPeerConnection(peerConfig, {});
+    connections[membershipId] = peerConnection;
 
     // peerConnection.addStream(localStream);
     peerConnection.onIceCandidate = (candidate) {
@@ -191,6 +192,8 @@ class Room {
       );
     };
     peerConnection.onRenegotiationNeeded = () async {
+      print('inside negotiation needed');
+
       final offer = await peerConnection.createOffer(sessionContraints);
 
       if (peerConnection.signalingState !=
