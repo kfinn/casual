@@ -33,21 +33,21 @@ class Room {
     final membershipId = payload['membership_id'];
     final peerConnection = await _findOrCreatePeerConnection(membershipId);
 
-    final offer = await peerConnection.createOffer(sessionContraints);
-    await peerConnection.setLocalDescription(offer);
+    // final offer = await peerConnection.createOffer(sessionContraints);
+    // await peerConnection.setLocalDescription(offer);
 
-    cable.performAction(
-      'Room',
-      action: 'create_offer',
-      channelParams: {'id': roomId},
-      actionParams: {
-        'to_membership_id': payload['membership_id'],
-        'offer': {
-          'sdp': offer.sdp,
-          'type': offer.type,
-        },
-      },
-    );
+    // cable.performAction(
+    //   'Room',
+    //   action: 'create_offer',
+    //   channelParams: {'id': roomId},
+    //   actionParams: {
+    //     'to_membership_id': payload['membership_id'],
+    //     'offer': {
+    //       'sdp': offer.sdp,
+    //       'type': offer.type,
+    //     },
+    //   },
+    // );
   }
 
   Future<void> membershipDestroyed(Map<String, dynamic> payload) async {
@@ -175,7 +175,7 @@ class Room {
 
     // peerConnection.addStream(localStream);
     peerConnection.onIceCandidate = (candidate) {
-      print(candidate.toMap());
+      // print(candidate.toMap());
       cable.performAction(
         'Room',
         action: 'create_ice_candidate',
@@ -190,6 +190,31 @@ class Room {
         },
       );
     };
+    peerConnection.onRenegotiationNeeded = () async {
+      final offer = await peerConnection.createOffer(sessionContraints);
+
+      if (peerConnection.signalingState !=
+          RTCSignalingState.RTCSignalingStateStable) {
+        print("The connection isn't stable yet; postponing...");
+        return;
+      }
+
+      await peerConnection.setLocalDescription(offer);
+
+      cable.performAction(
+        'Room',
+        action: 'create_offer',
+        channelParams: {'id': roomId},
+        actionParams: {
+          'to_membership_id': membershipId,
+          'offer': {
+            'sdp': offer.sdp,
+            'type': offer.type,
+          },
+        },
+      );
+    };
+    peerConnection.onSignalingState = print;
     peerConnection.onIceConnectionState = print;
     peerConnection.onIceGatheringState = print;
     peerConnection.onAddStream =
