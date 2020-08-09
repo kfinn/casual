@@ -9,6 +9,7 @@ import 'package:flutter_webrtc/webrtc.dart';
 class Room {
   final ActionCable cable;
   final String roomId;
+  final MediaStream localStream;
   final Map<String, RTCPeerConnection> connections = {};
   final Map<String, List<RTCIceCandidate>> bufferedCandidatesByMemberId = {};
 
@@ -25,7 +26,11 @@ class Room {
     'optional': [],
   };
 
-  Room({@required this.cable, @required this.roomId}) {
+  Room({
+    @required this.cable,
+    @required this.roomId,
+    @required this.localStream,
+  }) {
     _setupChannel();
   }
 
@@ -174,6 +179,8 @@ class Room {
     peerConnection = await createPeerConnection(peerConfig, {});
     connections[membershipId] = peerConnection;
 
+    peerConnection.addStream(localStream);
+
     peerConnection.onIceCandidate = (candidate) {
       // print(candidate.toMap());
       cable.performAction(
@@ -258,8 +265,6 @@ Future<void> main() async {
     },
   );
 
-  final room = Room(cable: cable, roomId: env['ROOM_ID']);
-
   final mediaConstraints = {
     'audio': true,
     'video': {
@@ -276,9 +281,11 @@ Future<void> main() async {
   final localRenderer = RTCVideoRenderer();
   await localRenderer.initialize();
   localRenderer.srcObject = localStream;
-  room.connections.values.forEach((c) {
-    c.addStream(localStream);
-  });
+  final room = Room(
+    cable: cable,
+    roomId: env['ROOM_ID'],
+    localStream: localStream,
+  );
 
   runApp(
     MaterialApp(
@@ -297,8 +304,7 @@ class HomeScreen extends HookWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('casual')),
-      // body: RTCVideoView(localRenderer),
-      body: Text('something'),
+      body: RTCVideoView(localRenderer),
     );
   }
 }
