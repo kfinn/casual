@@ -1,12 +1,13 @@
 import 'dart:convert';
 
 import 'package:action_cable/action_cable.dart';
+import 'package:casual/room_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_webrtc/webrtc.dart';
 
-class Room {
+class Room implements RoomChannelDelegate {
   final ActionCable cable;
   final String roomId;
   final MediaStream localStream;
@@ -346,21 +347,10 @@ class HomeScreen extends HookWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('casual')),
-      body: Column(
-        children: [
-          Container(
-            width: 250,
-            height: 250,
-            child: RTCVideoView(localRenderer),
-          ),
-          for (final c in room.connections.values)
-            Container(
-              height: 250,
-              width: 250,
-              child: PeerVideo(peerConnection: c),
-            ),
-        ],
-      ),
+      body: RoomScreen(
+        id: room.roomId,
+        localRenderer: localRenderer,
+      )
     );
   }
 }
