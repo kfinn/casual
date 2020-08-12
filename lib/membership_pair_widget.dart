@@ -135,7 +135,7 @@ class MembershipPairWidget extends HookWidget {
         }
 
         final webRtcIceCandidatesToAdd = Set.from(membershipPairState.value.webRtcIceCandidates).difference(addedWebRtcIceCandidatesState.value);
-        await Future.wait(webRtcIceCandidatesToAdd.map((webRtcIceCandidate) async {
+        await Future.wait(webRtcIceCandidatesToAdd.map((webRtcIceCandidate) {
           return peerConnection.addCandidate(
             RTCIceCandidate(
               webRtcIceCandidate.sdp,
