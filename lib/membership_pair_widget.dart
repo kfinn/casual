@@ -36,8 +36,8 @@ class MembershipPairWidget extends HookWidget {
     final cable = useProvider(cableProvider);
 
     final membershipPairState = useState(MembershipPair.empty());
-    final addedWebRtcOffer = useState<WebRtcOffer>(null);
-    final addedWebRtcAnswer = useState<WebRtcAnswer>(null);
+    final addedWebRtcOfferState = useState<WebRtcOffer>(null);
+    final addedWebRtcAnswerState = useState<WebRtcAnswer>(null);
     final addedWebRtcIceCandidatesState = useState(Set<WebRtcIceCandidate>());
 
     final updateMembershipPair = (MembershipPair membershipPair) => membershipPairState.value = membershipPair;
@@ -113,15 +113,15 @@ class MembershipPairWidget extends HookWidget {
           final offer = await peerConnection.createOffer(SESSION_CONSTRAINTS);
           await peerConnection.setLocalDescription(RTCSessionDescription(offer.sdp, offer.type));
           membershipPairChannelState.value.createWebRtcOffer(sdp: offer.sdp);
-        } else if (membershipPairState.value.webRtcOffer != null && addedWebRtcOffer == null) {
+        } else if (membershipPairState.value.webRtcOffer != null && addedWebRtcOfferState == null) {
           final webRtcOffer = membershipPairState.value.webRtcOffer;
           await peerConnection.setRemoteDescription(RTCSessionDescription(webRtcOffer.sdp, 'offer'));
-          addedWebRtcOffer.value = webRtcOffer;
+          addedWebRtcOfferState.value = webRtcOffer;
 
           final answer = await peerConnection.createAnswer(SESSION_CONSTRAINTS);
           await peerConnection.setLocalDescription(RTCSessionDescription(answer.sdp, answer.type));
           membershipPairChannelState.value.createWebRtcAnswer(sdp: answer.sdp);
-        } else if (membershipPairState.value.webRtcAnswer != null && addedWebRtcAnswer == null) {
+        } else if (membershipPairState.value.webRtcAnswer != null && addedWebRtcAnswerState == null) {
           final webRtcAnswer = membershipPairState.value.webRtcAnswer;
           await peerConnection.setRemoteDescription(RTCSessionDescription(webRtcAnswer.sdp, 'answer'));
         }
