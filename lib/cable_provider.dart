@@ -4,8 +4,6 @@ import 'package:action_cable/action_cable.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-import 'env_provider.dart';
-
 final cableProvider = Provider<ActionCable>((ref) {
   final env = DotEnv().env;
 

@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import 'cable_provider.dart';
 import 'membership_pair_entry.dart';
+import 'membership_pair_widget.dart';
 import 'room_channel.dart';
 
 class RoomScreen extends HookWidget {
@@ -46,7 +47,7 @@ class RoomScreen extends HookWidget {
             Container(
               height: 250,
               width: 250,
-              child: PeerVideo(peerConnection: c),
+              child: MembershipPairWidget(membershipPairEntry: membershipPairEntry),
             ),
         ],
       );

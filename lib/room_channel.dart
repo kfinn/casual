@@ -30,27 +30,6 @@ class RoomChannel {
     );
   }
 
-  void createOffer(offerParams) {
-    _performAction('create_offer', offerParams);
-  }
-
-  void createAnswer(answerParams) {
-    _performAction('create_answer', answerParams);
-  }
-
-  void createIceCandidate(iceCandidateParams) {
-    _performAction('create_ice_candidate', iceCandidateParams);
-  }
-
-  void _performAction(action, params) {
-    cable.performAction(
-      'Room',
-      action: action,
-      channelParams: _channelParams,
-      actionParams: params
-    );
-  }
-
   Map<String, dynamic> get _channelParams {
     return { 'id': id };
   }
