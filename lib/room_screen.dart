@@ -24,7 +24,7 @@ class RoomScreen extends HookWidget {
         id: id,
         onMembershipPairEntryCreated: ({ membershipPairId, older }) {
           membershipPairEntries.value = [
-            ...(membershipPairEntries.value),
+            ...membershipPairEntries.value,
             MembershipPairEntry(membershipPairId: membershipPairId, older: older)
           ];
         }
