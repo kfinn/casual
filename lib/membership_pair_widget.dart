@@ -134,10 +134,10 @@ class MembershipPairWidget extends HookWidget {
             addedWebRtcOfferState.value == null) {
           print('createAnswer');
           final webRtcOffer = membershipPairState.value.webRtcOffer;
+          addedWebRtcOfferState.value = webRtcOffer;
           await peerConnection.setRemoteDescription(
             RTCSessionDescription(webRtcOffer.sdp, 'offer'),
           );
-          addedWebRtcOfferState.value = webRtcOffer;
 
           final answer = await peerConnection.createAnswer(SESSION_CONSTRAINTS);
           await peerConnection.setLocalDescription(
@@ -163,17 +163,18 @@ class MembershipPairWidget extends HookWidget {
         }
 
         final webRtcIceCandidatesToAdd =
-            Set.from(membershipPairState.value.webRtcIceCandidates)
+            Set<WebRtcIceCandidate>.from(membershipPairState.value.webRtcIceCandidates)
                 .difference(addedWebRtcIceCandidatesState.value);
         await Future.wait(webRtcIceCandidatesToAdd.map((webRtcIceCandidate) {
           print("addCandidate $webRtcIceCandidate");
+          addedWebRtcIceCandidatesState.value = addedWebRtcIceCandidatesState
+              .value
+              .union(webRtcIceCandidatesToAdd);
           return peerConnection.addCandidate(RTCIceCandidate(
               webRtcIceCandidate.sdp,
               webRtcIceCandidate.sdpMid,
               webRtcIceCandidate.sdpMlineIndex));
         }));
-        addedWebRtcIceCandidatesState.value =
-            addedWebRtcIceCandidatesState.value.union(webRtcIceCandidatesToAdd);
       }();
     }, [
       peerConnectionState.value,
