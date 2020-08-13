@@ -27,6 +27,7 @@ class MembershipPairChannel {
   }
 
   void subscribe() {
+    print("subscribing to membership pair $id");
     cable.subscribe(
       'MembershipPair',
       channelParams: _channelParams,

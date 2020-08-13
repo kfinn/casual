@@ -35,15 +35,12 @@ Future<void> main() async {
     },
   );
 
-  final localStream = await useProvider(localStreamProvider.future);
-  final localRenderer = RTCVideoRenderer();
-  await localRenderer.initialize();
-  localRenderer.srcObject = localStream;
-
   runApp(
-    MaterialApp(
-      theme: ThemeData.dark(),
-      home: RoomScreen(localRenderer: localRenderer, id: env['ROOM_ID']),
+    ProviderScope(
+      child: MaterialApp(
+        theme: ThemeData.dark(),
+        home: RoomScreen(id: env['ROOM_ID']),
+      ),
     ),
   );
 }

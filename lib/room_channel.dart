@@ -1,11 +1,14 @@
 import 'package:action_cable/action_cable.dart';
 
+import 'membership_pair_entry.dart';
+
 class RoomChannel {
   final ActionCable cable;
   final String id;
-  final void Function({ String membershipPairId, bool older }) onMembershipPairEntryCreated;
+  final void Function(Iterable<MembershipPairEntry>) onConnected;
+  final void Function(MembershipPairEntry) onMembershipPairEntryCreated;
 
-  const RoomChannel({ this.cable, this.id, this.onMembershipPairEntryCreated });
+  const RoomChannel({ this.cable, this.id, this.onConnected, this.onMembershipPairEntryCreated });
 
   void unsubscribe() {
     cable.unsubscribe('Room', channelParams: _channelParams);
@@ -18,12 +21,16 @@ class RoomChannel {
       onSubscribed: () => print('subscribed to room $id'),
       onDisconnected: () => print('disconnected from room $id'),
       onMessage: (message) async {
+        final payload = message['payload'];
         switch (message['event']) {
+          case 'connected':
+            final membershipPairEntries = payload['membership_pair_entries'].map<MembershipPairEntry>((attributes) {
+              return MembershipPairEntry.fromAttributes(attributes);
+            });
+            onConnected(membershipPairEntries);
+            break;
           case 'membership_pair_entry_created':
-            onMembershipPairEntryCreated(
-              membershipPairId: message['payload']['membership_pair_id'],
-              older: message['payload']['older']
-            );
+            onMembershipPairEntryCreated(MembershipPairEntry.fromAttributes(payload));
             break;
         }
       },

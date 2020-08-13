@@ -10,11 +10,11 @@ class MembershipPair {
   const MembershipPair({ this.webRtcOffer, this.webRtcAnswer, this.webRtcIceCandidates });
 
   MembershipPair.fromAttributes(Map<String, dynamic> data) : this(
-    webRtcOffer: WebRtcOffer.fromAttributes(data['web_rtc_offer']),
-    webRtcAnswer: WebRtcAnswer.fromAttributes(data['web_rtc_answer']),
-    webRtcIceCandidates: (data['web_rtc_ice_candidates'] as List<Map<String, dynamic>>).map(
+    webRtcOffer: data['web_rtc_offer'] != null ? WebRtcOffer.fromAttributes(data['web_rtc_offer']) : null,
+    webRtcAnswer: data['web_rtc_answer'] != null ? WebRtcAnswer.fromAttributes(data['web_rtc_answer']) : null,
+    webRtcIceCandidates: data['web_rtc_ice_candidates'].map<WebRtcIceCandidate>(
       (webRtcOfferAttributes) => WebRtcIceCandidate.fromAttributes(webRtcOfferAttributes)
-    )
+    ).toList()
   );
 
   MembershipPair.empty() : this(
