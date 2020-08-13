@@ -127,26 +127,30 @@ class MembershipPairWidget extends HookWidget {
           print('createOffer');
           final offer = await peerConnection.createOffer(SESSION_CONSTRAINTS);
           await peerConnection.setLocalDescription(
-              RTCSessionDescription(offer.sdp, offer.type));
+            RTCSessionDescription(offer.sdp, offer.type),
+          );
           membershipPairChannelState.value.createWebRtcOffer(sdp: offer.sdp);
         } else if (membershipPairState.value.webRtcOffer != null &&
-            addedWebRtcOfferState == null) {
+            addedWebRtcOfferState.value == null) {
           print('createAnswer');
           final webRtcOffer = membershipPairState.value.webRtcOffer;
           await peerConnection.setRemoteDescription(
-              RTCSessionDescription(webRtcOffer.sdp, 'offer'));
+            RTCSessionDescription(webRtcOffer.sdp, 'offer'),
+          );
           addedWebRtcOfferState.value = webRtcOffer;
 
           final answer = await peerConnection.createAnswer(SESSION_CONSTRAINTS);
           await peerConnection.setLocalDescription(
-              RTCSessionDescription(answer.sdp, answer.type));
+            RTCSessionDescription(answer.sdp, answer.type),
+          );
           membershipPairChannelState.value.createWebRtcAnswer(sdp: answer.sdp);
         } else if (membershipPairState.value.webRtcAnswer != null &&
-            addedWebRtcAnswerState == null) {
+            addedWebRtcAnswerState.value == null) {
           print('receivedAnswer');
           final webRtcAnswer = membershipPairState.value.webRtcAnswer;
           await peerConnection.setRemoteDescription(
-              RTCSessionDescription(webRtcAnswer.sdp, 'answer'));
+            RTCSessionDescription(webRtcAnswer.sdp, 'answer'),
+          );
         }
 
         final canAddIceCandidates = [
