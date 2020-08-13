@@ -39,6 +39,7 @@ class MembershipPairWidget extends HookWidget {
 
     final remoteWebRtcOfferState = useState<WebRtcOffer>(null);
     final remoteWebRtcAnswerState = useState<WebRtcAnswer>(null);
+    final hasRemoteDescriptionState = useState(false);
     final remoteWebRtcIceCandidatesState = useState(Set<WebRtcIceCandidate>());
     final addedRemoteWebRtcIceCandidatesState =
         useState(Set<WebRtcIceCandidate>());
@@ -94,13 +95,8 @@ class MembershipPairWidget extends HookWidget {
 
     final localStreamFuture = useProvider(localStreamProvider.future);
     final peerConnectionState = useState<RTCPeerConnection>(null);
-    final peerConnectionSignalingStateState = useState<RTCSignalingState>(null);
     final remoteStreamState = useState<MediaStream>(null);
 
-    final onSignalingState = (RTCSignalingState signalingState) {
-      print('onSignalingState: $signalingState');
-      peerConnectionSignalingStateState.value = signalingState;
-    };
     final onIceCandidate = (RTCIceCandidate iceCandidate) {
       print('onIceCandidate: ${iceCandidate.candidate}');
       membershipPairChannelState.value.createWebRtcIceCandidate(
@@ -120,12 +116,10 @@ class MembershipPairWidget extends HookWidget {
         final RTCPeerConnection peerConnection = resolvedFutures[1];
 
         peerConnection.addStream(localStream);
-        peerConnection.onSignalingState = onSignalingState;
         peerConnection.onIceCandidate = onIceCandidate;
         peerConnection.onAddStream = onAddStream;
 
         peerConnectionState.value = peerConnection;
-        peerConnectionSignalingStateState.value = peerConnection.signalingState;
       });
 
       return () => peerConnectionState.value?.dispose();
@@ -159,6 +153,7 @@ class MembershipPairWidget extends HookWidget {
         await peerConnection.setRemoteDescription(
           RTCSessionDescription(remoteWebRtcOffer.sdp, 'offer'),
         );
+        hasRemoteDescriptionState.value = true;
 
         final answer = await peerConnection.createAnswer(SESSION_CONSTRAINTS);
         await peerConnection.setLocalDescription(
@@ -180,6 +175,7 @@ class MembershipPairWidget extends HookWidget {
         await peerConnection.setRemoteDescription(
           RTCSessionDescription(remoteWebRtcAnswer.sdp, 'answer'),
         );
+        hasRemoteDescriptionState.value = true;
       }();
     }, [peerConnectionState.value, remoteWebRtcAnswerState.value]);
 
@@ -189,12 +185,8 @@ class MembershipPairWidget extends HookWidget {
         return;
       }
 
-      final canAddIceCandidates = [
-        RTCSignalingState.RTCSignalingStateHaveRemoteOffer,
-        RTCSignalingState.RTCSignalingStateHaveRemotePrAnswer
-      ].contains(peerConnectionSignalingStateState.value);
-      print('canAddIceCandidates: $canAddIceCandidates');
-      if (!canAddIceCandidates) {
+      if (!hasRemoteDescriptionState.value) {
+        print("received ice candiates before a remote description");
         return;
       }
 
@@ -214,7 +206,7 @@ class MembershipPairWidget extends HookWidget {
       }();
     }, [
       peerConnectionState.value,
-      peerConnectionSignalingStateState.value,
+      hasRemoteDescriptionState.value,
       remoteWebRtcIceCandidatesState.value
     ]);
 
