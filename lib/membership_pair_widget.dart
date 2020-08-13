@@ -61,13 +61,16 @@ class MembershipPairWidget extends HookWidget {
           .copyWith(webRtcIceCandidates: webRtcIceCandidates);
     };
 
-    final membershipPairChannelState = useState(MembershipPairChannel(
+    final membershipPairChannelState = useState(
+      MembershipPairChannel(
         cable: cable,
         id: membershipPairEntry.membershipPairId,
         onConnected: updateMembershipPair,
         onWebRtcOfferCreated: onWebRtcOfferCreated,
         onWebRtcAnswerCreated: onWebRtcAnswerCreated,
-        onWebRtcIceCandidateCreated: onWebRtcIceCandidateCreated));
+        onWebRtcIceCandidateCreated: onWebRtcIceCandidateCreated,
+      ),
+    );
 
     useEffect(() {
       membershipPairChannelState.value.subscribe();
@@ -79,16 +82,20 @@ class MembershipPairWidget extends HookWidget {
     final peerConnectionSignalingStateState = useState<RTCSignalingState>(null);
     final remoteStreamState = useState<MediaStream>(null);
 
-    final onSignalingState = (RTCSignalingState signalingState) =>
-        peerConnectionSignalingStateState.value = signalingState;
+    final onSignalingState = (RTCSignalingState signalingState) {
+      print('onSignalingState: $signalingState');
+      peerConnectionSignalingStateState.value = signalingState;
+    };
     final onIceCandidate = (RTCIceCandidate iceCandidate) {
       membershipPairChannelState.value.createWebRtcIceCandidate(
           sdp: iceCandidate.candidate,
           sdpMid: iceCandidate.sdpMid,
           sdpMlineIndex: iceCandidate.sdpMlineIndex);
     };
-    final onAddStream =
-        (MediaStream stream) => remoteStreamState.value = stream;
+    final onAddStream = (MediaStream stream) {
+      print('onAddStream: ${stream.id}');
+      remoteStreamState.value = stream;
+    };
 
     useEffect(() {
       Future.wait([localStreamFuture, createPeerConnection(PEER_CONFIG, {})])
@@ -117,12 +124,14 @@ class MembershipPairWidget extends HookWidget {
         final peerConnection = peerConnectionState.value;
         if (membershipPairEntry.older &&
             peerConnectionSignalingStateState.value == null) {
+          print('createOffer');
           final offer = await peerConnection.createOffer(SESSION_CONSTRAINTS);
           await peerConnection.setLocalDescription(
               RTCSessionDescription(offer.sdp, offer.type));
           membershipPairChannelState.value.createWebRtcOffer(sdp: offer.sdp);
         } else if (membershipPairState.value.webRtcOffer != null &&
             addedWebRtcOfferState == null) {
+          print('createAnswer');
           final webRtcOffer = membershipPairState.value.webRtcOffer;
           await peerConnection.setRemoteDescription(
               RTCSessionDescription(webRtcOffer.sdp, 'offer'));
@@ -134,6 +143,7 @@ class MembershipPairWidget extends HookWidget {
           membershipPairChannelState.value.createWebRtcAnswer(sdp: answer.sdp);
         } else if (membershipPairState.value.webRtcAnswer != null &&
             addedWebRtcAnswerState == null) {
+          print('receivedAnswer');
           final webRtcAnswer = membershipPairState.value.webRtcAnswer;
           await peerConnection.setRemoteDescription(
               RTCSessionDescription(webRtcAnswer.sdp, 'answer'));
@@ -143,6 +153,7 @@ class MembershipPairWidget extends HookWidget {
           RTCSignalingState.RTCSignalingStateHaveRemoteOffer,
           RTCSignalingState.RTCSignalingStateHaveRemotePrAnswer
         ].contains(peerConnectionSignalingStateState.value);
+        print('canAddIceCandidates: $canAddIceCandidates');
         if (!canAddIceCandidates) {
           return;
         }
