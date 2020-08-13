@@ -14,5 +14,5 @@ class WebRtcIceCandidate extends Equatable {
   );
 
   @override
-  List<Object> get props => [id];
+  List<Object> get props => [id, sdp, sdpMid, sdpMlineIndex];
 }

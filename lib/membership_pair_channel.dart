@@ -35,6 +35,7 @@ class MembershipPairChannel {
       onDisconnected: () => print('disconnected from membership pair $id'),
       onMessage: (message) async {
         final payload = message['payload'];
+        print(message);
         switch (message['event']) {
           case 'connected':
             onConnected(MembershipPair.fromAttributes(payload));
@@ -79,7 +80,8 @@ class MembershipPairChannel {
     );
   }
 
-  void _performAction(action, params) {
+  void _performAction(String action, Map<String, dynamic> params) {
+    print("$action: $params");
     cable.performAction(
       'MembershipPair',
       channelParams: _channelParams,

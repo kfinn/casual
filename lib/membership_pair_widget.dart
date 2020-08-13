@@ -29,7 +29,8 @@ const SESSION_CONSTRAINTS = {
 class MembershipPairWidget extends HookWidget {
   final MembershipPairEntry membershipPairEntry;
 
-  const MembershipPairWidget({ Key key, @required this.membershipPairEntry }) : super(key: key);
+  const MembershipPairWidget({Key key, @required this.membershipPairEntry})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -40,66 +41,71 @@ class MembershipPairWidget extends HookWidget {
     final addedWebRtcAnswerState = useState<WebRtcAnswer>(null);
     final addedWebRtcIceCandidatesState = useState(Set<WebRtcIceCandidate>());
 
-    final updateMembershipPair = (MembershipPair membershipPair) => membershipPairState.value = membershipPair;
+    final updateMembershipPair = (MembershipPair membershipPair) =>
+        membershipPairState.value = membershipPair;
     final onWebRtcOfferCreated = (WebRtcOffer webRtcOffer) {
-      membershipPairState.value = membershipPairState.value.copyWith(webRtcOffer: webRtcOffer);
+      membershipPairState.value =
+          membershipPairState.value.copyWith(webRtcOffer: webRtcOffer);
     };
     final onWebRtcAnswerCreated = (WebRtcAnswer webRtcAnswer) {
-      membershipPairState.value = membershipPairState.value.copyWith(webRtcAnswer: webRtcAnswer);
+      membershipPairState.value =
+          membershipPairState.value.copyWith(webRtcAnswer: webRtcAnswer);
     };
-    final onWebRtcIceCandidateCreated = (WebRtcIceCandidate webRtcIceCandidate) {
-      final webRtcIceCandidates = [...membershipPairState.value.webRtcIceCandidates, webRtcIceCandidate];
-      membershipPairState.value = membershipPairState.value.copyWith(webRtcIceCandidates: webRtcIceCandidates);
+    final onWebRtcIceCandidateCreated =
+        (WebRtcIceCandidate webRtcIceCandidate) {
+      final webRtcIceCandidates = [
+        ...membershipPairState.value.webRtcIceCandidates,
+        webRtcIceCandidate
+      ];
+      membershipPairState.value = membershipPairState.value
+          .copyWith(webRtcIceCandidates: webRtcIceCandidates);
     };
 
-    final membershipPairChannelState = useState(
-      MembershipPairChannel(
+    final membershipPairChannelState = useState(MembershipPairChannel(
         cable: cable,
         id: membershipPairEntry.membershipPairId,
         onConnected: updateMembershipPair,
         onWebRtcOfferCreated: onWebRtcOfferCreated,
         onWebRtcAnswerCreated: onWebRtcAnswerCreated,
-        onWebRtcIceCandidateCreated: onWebRtcIceCandidateCreated
-      )
-    );
+        onWebRtcIceCandidateCreated: onWebRtcIceCandidateCreated));
 
     useEffect(() {
       membershipPairChannelState.value.subscribe();
       return () => membershipPairChannelState.value.unsubscribe();
-    });
+    }, [membershipPairChannelState.value]);
 
     final localStreamFuture = useProvider(localStreamProvider.future);
     final peerConnectionState = useState<RTCPeerConnection>(null);
     final peerConnectionSignalingStateState = useState<RTCSignalingState>(null);
     final remoteStreamState = useState<MediaStream>(null);
 
-    final onSignalingState = (RTCSignalingState signalingState) => peerConnectionSignalingStateState.value = signalingState;
+    final onSignalingState = (RTCSignalingState signalingState) =>
+        peerConnectionSignalingStateState.value = signalingState;
     final onIceCandidate = (RTCIceCandidate iceCandidate) {
       membershipPairChannelState.value.createWebRtcIceCandidate(
-        sdp: iceCandidate.candidate,
-        sdpMid: iceCandidate.sdpMid,
-        sdpMlineIndex: iceCandidate.sdpMlineIndex
-      );
+          sdp: iceCandidate.candidate,
+          sdpMid: iceCandidate.sdpMid,
+          sdpMlineIndex: iceCandidate.sdpMlineIndex);
     };
-    final onAddStream = (MediaStream stream) => remoteStreamState.value = stream;
+    final onAddStream =
+        (MediaStream stream) => remoteStreamState.value = stream;
 
     useEffect(() {
-        Future.wait([
-          localStreamFuture,
-          createPeerConnection(PEER_CONFIG, {})
-        ]).then((resolvedFutures) {
-          final MediaStream localStream = resolvedFutures[0];
-          final RTCPeerConnection peerConnection = resolvedFutures[1];
+      Future.wait([localStreamFuture, createPeerConnection(PEER_CONFIG, {})])
+          .then((resolvedFutures) {
+        final MediaStream localStream = resolvedFutures[0];
+        final RTCPeerConnection peerConnection = resolvedFutures[1];
 
-          peerConnection.addStream(localStream);
-          peerConnection.onSignalingState = onSignalingState;
-          peerConnection.onIceCandidate = onIceCandidate;
-          peerConnection.onAddStream = onAddStream;
+        peerConnection.addStream(localStream);
+        peerConnection.onSignalingState = onSignalingState;
+        peerConnection.onIceCandidate = onIceCandidate;
+        peerConnection.onAddStream = onAddStream;
 
-          peerConnectionState.value = peerConnection;
-        });
+        peerConnectionState.value = peerConnection;
+        peerConnectionSignalingStateState.value = peerConnection.signalingState;
+      });
 
-        return () => peerConnectionState.value?.dispose();
+      return () => peerConnectionState.value?.dispose();
     }, []);
 
     useEffect(() {
@@ -109,42 +115,50 @@ class MembershipPairWidget extends HookWidget {
 
       () async {
         final peerConnection = peerConnectionState.value;
-        if (membershipPairEntry.older && peerConnectionSignalingStateState.value == RTCSignalingState.RTCSignalingStateStable) {
+        if (membershipPairEntry.older &&
+            peerConnectionSignalingStateState.value == null) {
           final offer = await peerConnection.createOffer(SESSION_CONSTRAINTS);
-          await peerConnection.setLocalDescription(RTCSessionDescription(offer.sdp, offer.type));
+          await peerConnection.setLocalDescription(
+              RTCSessionDescription(offer.sdp, offer.type));
           membershipPairChannelState.value.createWebRtcOffer(sdp: offer.sdp);
-        } else if (membershipPairState.value.webRtcOffer != null && addedWebRtcOfferState == null) {
+        } else if (membershipPairState.value.webRtcOffer != null &&
+            addedWebRtcOfferState == null) {
           final webRtcOffer = membershipPairState.value.webRtcOffer;
-          await peerConnection.setRemoteDescription(RTCSessionDescription(webRtcOffer.sdp, 'offer'));
+          await peerConnection.setRemoteDescription(
+              RTCSessionDescription(webRtcOffer.sdp, 'offer'));
           addedWebRtcOfferState.value = webRtcOffer;
 
           final answer = await peerConnection.createAnswer(SESSION_CONSTRAINTS);
-          await peerConnection.setLocalDescription(RTCSessionDescription(answer.sdp, answer.type));
+          await peerConnection.setLocalDescription(
+              RTCSessionDescription(answer.sdp, answer.type));
           membershipPairChannelState.value.createWebRtcAnswer(sdp: answer.sdp);
-        } else if (membershipPairState.value.webRtcAnswer != null && addedWebRtcAnswerState == null) {
+        } else if (membershipPairState.value.webRtcAnswer != null &&
+            addedWebRtcAnswerState == null) {
           final webRtcAnswer = membershipPairState.value.webRtcAnswer;
-          await peerConnection.setRemoteDescription(RTCSessionDescription(webRtcAnswer.sdp, 'answer'));
+          await peerConnection.setRemoteDescription(
+              RTCSessionDescription(webRtcAnswer.sdp, 'answer'));
         }
 
         final canAddIceCandidates = [
-          RTCSignalingState.RTCSignalingStateHaveLocalPrAnswer,
+          RTCSignalingState.RTCSignalingStateHaveRemoteOffer,
           RTCSignalingState.RTCSignalingStateHaveRemotePrAnswer
         ].contains(peerConnectionSignalingStateState.value);
         if (!canAddIceCandidates) {
           return;
         }
 
-        final webRtcIceCandidatesToAdd = Set.from(membershipPairState.value.webRtcIceCandidates).difference(addedWebRtcIceCandidatesState.value);
+        final webRtcIceCandidatesToAdd =
+            Set.from(membershipPairState.value.webRtcIceCandidates)
+                .difference(addedWebRtcIceCandidatesState.value);
         await Future.wait(webRtcIceCandidatesToAdd.map((webRtcIceCandidate) {
-          return peerConnection.addCandidate(
-            RTCIceCandidate(
+          print("addCandidate $webRtcIceCandidate");
+          return peerConnection.addCandidate(RTCIceCandidate(
               webRtcIceCandidate.sdp,
               webRtcIceCandidate.sdpMid,
-              webRtcIceCandidate.sdpMlineIndex
-            )
-          );
+              webRtcIceCandidate.sdpMlineIndex));
         }));
-        addedWebRtcIceCandidatesState.value = addedWebRtcIceCandidatesState.value.union(webRtcIceCandidatesToAdd);
+        addedWebRtcIceCandidatesState.value =
+            addedWebRtcIceCandidatesState.value.union(webRtcIceCandidatesToAdd);
       }();
     }, [
       peerConnectionState.value,
