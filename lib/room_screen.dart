@@ -31,6 +31,10 @@ class RoomScreen extends HookWidget {
           membershipPairEntriesState.value = membershipPairEntriesState.value
               .union(Set.from([membershipPairEntry]));
         },
+        onMembershipPairEntryDestroyed: (membershipPairEntry) {
+          membershipPairEntriesState.value = membershipPairEntriesState.value
+              .difference(Set.from([membershipPairEntry]));
+        }
       ),
     );
 

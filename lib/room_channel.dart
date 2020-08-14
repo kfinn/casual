@@ -7,8 +7,9 @@ class RoomChannel {
   final String id;
   final void Function(Iterable<MembershipPairEntry>) onConnected;
   final void Function(MembershipPairEntry) onMembershipPairEntryCreated;
+  final void Function(MembershipPairEntry) onMembershipPairEntryDestroyed;
 
-  const RoomChannel({ this.cable, this.id, this.onConnected, this.onMembershipPairEntryCreated });
+  const RoomChannel({ this.cable, this.id, this.onConnected, this.onMembershipPairEntryCreated, this.onMembershipPairEntryDestroyed });
 
   void unsubscribe() {
     cable.unsubscribe('Room', channelParams: _channelParams);
@@ -32,6 +33,9 @@ class RoomChannel {
             break;
           case 'membership_pair_entry_created':
             onMembershipPairEntryCreated(MembershipPairEntry.fromAttributes(payload));
+            break;
+          case 'membership_pair_entry_destroyed':
+            onMembershipPairEntryDestroyed(MembershipPairEntry.fromAttributes(payload));
             break;
         }
       },

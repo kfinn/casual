@@ -104,10 +104,15 @@ class MembershipPairWidget extends HookWidget {
           sdpMid: iceCandidate.sdpMid,
           sdpMlineIndex: iceCandidate.sdpMlineIndex);
     };
+
     final onAddStream = (MediaStream stream) {
       print('onAddStream: ${stream.id}');
       remoteStreamState.value = stream;
     };
+
+    useEffect(() {
+      return () => remoteStreamState.value?.dispose();
+    }, [remoteStreamState.value]);
 
     useEffect(() {
       Future.wait([localStreamFuture, createPeerConnection(PEER_CONFIG, {})])
