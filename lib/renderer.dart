@@ -1,11 +1,11 @@
-import 'package:flutter/src/widgets/framework.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_webrtc/webrtc.dart';
 
 class Renderer extends HookWidget {
   final MediaStream mediaStream;
 
-  const Renderer({ Key key, @required this.mediaStream }) : super(key: key);
+  const Renderer({Key key, @required this.mediaStream}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -17,6 +17,8 @@ class Renderer extends HookWidget {
         await rendererState.value.initialize();
         rendererDidInitializeState.value = true;
       }();
+
+      return null;
     }, []);
 
     useEffect(() {
@@ -25,8 +27,13 @@ class Renderer extends HookWidget {
       }
 
       rendererState.value.srcObject = mediaStream;
+
+      return null;
     }, [rendererDidInitializeState.value, mediaStream]);
 
-    return RTCVideoView(rendererState.value);
+    return AspectRatio(
+      aspectRatio: 16.0 / 9.0,
+      child: RTCVideoView(rendererState.value),
+    );
   }
 }

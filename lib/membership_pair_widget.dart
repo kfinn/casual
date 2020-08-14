@@ -139,6 +139,8 @@ class MembershipPairWidget extends HookWidget {
         );
         membershipPairChannelState.value.createWebRtcOffer(sdp: offer.sdp);
       }();
+
+      return null;
     }, [peerConnectionState.value]);
 
     useEffect(() {
@@ -161,6 +163,8 @@ class MembershipPairWidget extends HookWidget {
         );
         membershipPairChannelState.value.createWebRtcAnswer(sdp: answer.sdp);
       }();
+
+      return null;
     }, [peerConnectionState.value, remoteWebRtcOfferState.value]);
 
     useEffect(() {
@@ -177,6 +181,8 @@ class MembershipPairWidget extends HookWidget {
         );
         hasRemoteDescriptionState.value = true;
       }();
+
+      return null;
     }, [peerConnectionState.value, remoteWebRtcAnswerState.value]);
 
     useEffect(() {
@@ -204,6 +210,8 @@ class MembershipPairWidget extends HookWidget {
               webRtcIceCandidate.sdpMlineIndex));
         }));
       }();
+
+      return null;
     }, [
       peerConnectionState.value,
       hasRemoteDescriptionState.value,

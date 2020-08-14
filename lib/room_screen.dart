@@ -19,7 +19,8 @@ class RoomScreen extends HookWidget {
     final cable = useProvider(cableProvider);
     final membershipPairEntriesState =
         useState<Set<MembershipPairEntry>>(Set.identity());
-    final roomChannel = useState(RoomChannel(
+    final roomChannel = useState(
+      RoomChannel(
         cable: cable,
         id: id,
         onConnected: (connectedMembershipPairEntries) {
@@ -29,7 +30,9 @@ class RoomScreen extends HookWidget {
         onMembershipPairEntryCreated: (membershipPairEntry) {
           membershipPairEntriesState.value = membershipPairEntriesState.value
               .union(Set.from([membershipPairEntry]));
-        }));
+        },
+      ),
+    );
 
     print("RoomScreen#build ${membershipPairEntriesState.value}");
 
@@ -41,22 +44,23 @@ class RoomScreen extends HookWidget {
     final localStreamAsyncState = useProvider(localStreamProvider);
 
     return Scaffold(
-      body: Column(
+      appBar: AppBar(
+        title: Text('casual'),
+      ),
+      body: GridView.count(
+        scrollDirection: Axis.horizontal,
+        crossAxisCount: 2,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
         children: [
-          Container(
-            width: 250,
-            height: 250,
-            child: localStreamAsyncState.when(
-                data: (localStream) => Renderer(mediaStream: localStream),
-                loading: () => Text('loading'),
-                error: (_error, _stackTrace) => Text('error')),
+          localStreamAsyncState.when(
+            data: (localStream) => Renderer(mediaStream: localStream),
+            loading: () => Text('loading'),
+            error: (_error, _stackTrace) => Text('error'),
           ),
           for (final membershipPairEntry in membershipPairEntriesState.value)
-            Container(
-              height: 250,
-              width: 250,
-              child: MembershipPairWidget(
-                  membershipPairEntry: membershipPairEntry),
+            MembershipPairWidget(
+              membershipPairEntry: membershipPairEntry,
             ),
         ],
       ),

@@ -6,8 +6,8 @@ final localStreamProvider = FutureProvider<MediaStream>((ref) {
     'audio': true,
     'video': {
       'mandatory': {
-        'minWidth': '640',
-        'minHeight': '480',
+        'minWidth': '1024',
+        'minHeight': '1024',
         'minFrameRate': '30',
       },
       'facingMode': 'user',
