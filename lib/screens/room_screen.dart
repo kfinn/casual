@@ -1,9 +1,10 @@
 import 'package:casual/components/logout_button.dart';
 import 'package:casual/components/renderer.dart';
-import 'package:casual/models/local_stream_provider.dart';
+import 'package:casual/models/local_stream.dart';
 import 'package:casual/models/membership_pair_entry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_webrtc/webrtc.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../components/membership_pair_widget.dart';
@@ -46,18 +47,25 @@ class RoomScreen extends HookWidget {
       return () => roomChannel.value.unsubscribe();
     }, [roomChannel.value]);
 
-    final localStreamAsyncState = useProvider(localStreamProvider);
+    final localStreamAsyncState = useState(AsyncValue<MediaStream>.loading());
+    useEffect(() {
+      () async {
+        localStreamAsyncState.value = await AsyncValue.guard(LocalStream.build);
+      }();
+
+      return null;
+    }, []);
 
     final isMutedState = useState(false);
     useEffect(() {
-      localStreamAsyncState.whenData((value) {
+      localStreamAsyncState.value.whenData((value) {
         value.getAudioTracks().forEach((t) {
           t.enabled = !isMutedState.value;
         });
       });
 
       return null;
-    }, [localStreamAsyncState, isMutedState.value]);
+    }, [localStreamAsyncState.value, isMutedState.value]);
 
     return Scaffold(
       appBar: AppBar(
@@ -72,8 +80,11 @@ class RoomScreen extends HookWidget {
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
         children: [
-          localStreamAsyncState.when(
-            data: (localStream) => Renderer(mediaStream: localStream, mirror: true),
+          localStreamAsyncState.value.when(
+            data: (localStream) => Renderer(
+              mediaStream: localStream,
+              mirror: true,
+            ),
             loading: () => Text('loading'),
             error: (_error, _stackTrace) => Text('error'),
           ),

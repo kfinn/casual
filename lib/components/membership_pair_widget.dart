@@ -6,7 +6,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_webrtc/webrtc.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-import '../models/local_stream_provider.dart';
+import '../models/local_stream.dart';
 import '../models/membership_pair.dart';
 import '../models/membership_pair_entry.dart';
 import '../models/web_rtc_answer.dart';
@@ -93,7 +93,6 @@ class MembershipPairWidget extends HookWidget {
       return () => membershipPairChannelState.value.unsubscribe();
     }, [membershipPairChannelState.value]);
 
-    final localStreamFuture = useProvider(localStreamProvider.future);
     final peerConnectionState = useState<RTCPeerConnection>(null);
     final remoteStreamState = useState<MediaStream>(null);
 
@@ -115,7 +114,7 @@ class MembershipPairWidget extends HookWidget {
     }, [remoteStreamState.value]);
 
     useEffect(() {
-      Future.wait([localStreamFuture, createPeerConnection(PEER_CONFIG, {})])
+      Future.wait([LocalStream.build(), createPeerConnection(PEER_CONFIG, {})])
           .then((resolvedFutures) {
         final MediaStream localStream = resolvedFutures[0];
         final RTCPeerConnection peerConnection = resolvedFutures[1];

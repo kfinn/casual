@@ -6,7 +6,8 @@ class Renderer extends HookWidget {
   final MediaStream mediaStream;
   final bool mirror;
 
-  const Renderer({Key key, @required this.mediaStream, this.mirror = false }) : super(key: key);
+  const Renderer({Key key, @required this.mediaStream, this.mirror = false})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +19,7 @@ class Renderer extends HookWidget {
         await rendererState.value.initialize();
         rendererDidInitializeState.value = true;
       }();
+
       return () => rendererState.value.dispose();
     }, []);
 
