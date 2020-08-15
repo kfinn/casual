@@ -1,6 +1,5 @@
 import 'package:action_cable/action_cable.dart';
-
-import 'membership_pair_entry.dart';
+import 'package:casual/models/membership_pair_entry.dart';
 
 class RoomChannel {
   final ActionCable cable;
@@ -9,7 +8,12 @@ class RoomChannel {
   final void Function(MembershipPairEntry) onMembershipPairEntryCreated;
   final void Function(MembershipPairEntry) onMembershipPairEntryDestroyed;
 
-  const RoomChannel({ this.cable, this.id, this.onConnected, this.onMembershipPairEntryCreated, this.onMembershipPairEntryDestroyed });
+  const RoomChannel(
+      {this.cable,
+      this.id,
+      this.onConnected,
+      this.onMembershipPairEntryCreated,
+      this.onMembershipPairEntryDestroyed});
 
   void unsubscribe() {
     cable.unsubscribe('Room', channelParams: _channelParams);
@@ -26,16 +30,19 @@ class RoomChannel {
         print(message);
         switch (message['event']) {
           case 'connected':
-            final membershipPairEntries = payload['membership_pair_entries'].map<MembershipPairEntry>((attributes) {
+            final membershipPairEntries = payload['membership_pair_entries']
+                .map<MembershipPairEntry>((attributes) {
               return MembershipPairEntry.fromAttributes(attributes);
             });
             onConnected(membershipPairEntries);
             break;
           case 'membership_pair_entry_created':
-            onMembershipPairEntryCreated(MembershipPairEntry.fromAttributes(payload));
+            onMembershipPairEntryCreated(
+                MembershipPairEntry.fromAttributes(payload));
             break;
           case 'membership_pair_entry_destroyed':
-            onMembershipPairEntryDestroyed(MembershipPairEntry.fromAttributes(payload));
+            onMembershipPairEntryDestroyed(
+                MembershipPairEntry.fromAttributes(payload));
             break;
         }
       },
@@ -43,6 +50,6 @@ class RoomChannel {
   }
 
   Map<String, dynamic> get _channelParams {
-    return { 'id': id };
+    return {'id': id};
   }
 }

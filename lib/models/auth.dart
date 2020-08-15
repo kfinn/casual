@@ -1,4 +1,4 @@
-import 'package:casual/secure_storage.dart';
+import 'package:casual/models/secure_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';

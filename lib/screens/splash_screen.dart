@@ -1,6 +1,6 @@
-import 'package:casual/auth.dart';
-import 'package:casual/room_screen.dart';
+import 'package:casual/models/auth.dart';
 import 'package:casual/screens/login_screen.dart';
+import 'package:casual/screens/room_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';

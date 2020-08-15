@@ -1,9 +1,9 @@
 import 'package:action_cable/action_cable.dart';
+import 'package:casual/models/web_rtc_answer.dart';
+import 'package:casual/models/web_rtc_ice_candidate.dart';
+import 'package:casual/models/web_rtc_offer.dart';
 
 import 'membership_pair.dart';
-import 'web_rtc_answer.dart';
-import 'web_rtc_ice_candidate.dart';
-import 'web_rtc_offer.dart';
 
 class MembershipPairChannel {
   final ActionCable cable;
@@ -19,7 +19,7 @@ class MembershipPairChannel {
     this.onConnected,
     this.onWebRtcOfferCreated,
     this.onWebRtcAnswerCreated,
-    this.onWebRtcIceCandidateCreated
+    this.onWebRtcIceCandidateCreated,
   });
 
   void unsubscribe() {
@@ -47,7 +47,8 @@ class MembershipPairChannel {
             onWebRtcAnswerCreated(WebRtcAnswer.fromAttributes(payload));
             break;
           case 'web_rtc_ice_candidate_created':
-            onWebRtcIceCandidateCreated(WebRtcIceCandidate.fromAttributes(payload));
+            onWebRtcIceCandidateCreated(
+                WebRtcIceCandidate.fromAttributes(payload));
             break;
         }
       },
@@ -55,38 +56,35 @@ class MembershipPairChannel {
   }
 
   Map<String, dynamic> get _channelParams {
-    return { 'id': id };
+    return {'id': id};
   }
 
-
-  void createWebRtcOffer({ String sdp }) {
-    _performAction('create_web_rtc_offer', { 'web_rtc_offer': { 'sdp': sdp } });
+  void createWebRtcOffer({String sdp}) {
+    _performAction('create_web_rtc_offer', {
+      'web_rtc_offer': {'sdp': sdp}
+    });
   }
 
-  void createWebRtcAnswer({ String sdp }) {
-    _performAction('create_web_rtc_answer', { 'web_rtc_answer': { 'sdp': sdp } });
+  void createWebRtcAnswer({String sdp}) {
+    _performAction('create_web_rtc_answer', {
+      'web_rtc_answer': {'sdp': sdp}
+    });
   }
 
-  void createWebRtcIceCandidate({ String sdp, String sdpMid, int sdpMlineIndex }) {
-    _performAction(
-      'create_web_rtc_ice_candidate',
-      {
-        'web_rtc_ice_candidate': {
-          'sdp': sdp,
-          'sdp_mid': sdpMid,
-          'sdp_mline_index': sdpMlineIndex
-        }
+  void createWebRtcIceCandidate(
+      {String sdp, String sdpMid, int sdpMlineIndex}) {
+    _performAction('create_web_rtc_ice_candidate', {
+      'web_rtc_ice_candidate': {
+        'sdp': sdp,
+        'sdp_mid': sdpMid,
+        'sdp_mline_index': sdpMlineIndex
       }
-    );
+    });
   }
 
   void _performAction(String action, Map<String, dynamic> params) {
     print("$action: $params");
-    cable.performAction(
-      'MembershipPair',
-      channelParams: _channelParams,
-      action: action,
-      actionParams: params
-    );
+    cable.performAction('MembershipPair',
+        channelParams: _channelParams, action: action, actionParams: params);
   }
 }

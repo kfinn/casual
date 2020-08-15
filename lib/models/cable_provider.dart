@@ -1,5 +1,5 @@
 import 'package:action_cable/action_cable.dart';
-import 'package:casual/auth.dart';
+import 'package:casual/models/auth.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 final cableProvider = Provider<ActionCable>((ref) {

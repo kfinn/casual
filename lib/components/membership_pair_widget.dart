@@ -1,17 +1,17 @@
-import 'package:casual/cable_provider.dart';
-import 'package:casual/membership_pair_channel.dart';
-import 'package:casual/renderer.dart';
+import 'package:casual/components/renderer.dart';
+import 'package:casual/models/cable_provider.dart';
+import 'package:casual/models/membership_pair_channel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_webrtc/webrtc.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-import 'local_stream_provider.dart';
-import 'membership_pair.dart';
-import 'membership_pair_entry.dart';
-import 'web_rtc_answer.dart';
-import 'web_rtc_ice_candidate.dart';
-import 'web_rtc_offer.dart';
+import '../models/local_stream_provider.dart';
+import '../models/membership_pair.dart';
+import '../models/membership_pair_entry.dart';
+import '../models/web_rtc_answer.dart';
+import '../models/web_rtc_ice_candidate.dart';
+import '../models/web_rtc_offer.dart';
 
 const PEER_CONFIG = {
   'iceServers': [
