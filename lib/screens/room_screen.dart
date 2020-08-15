@@ -22,20 +22,21 @@ class RoomScreen extends HookWidget {
         useState<Set<MembershipPairEntry>>(Set.identity());
     final roomChannel = useState(
       RoomChannel(
-          cable: cable,
-          id: id,
-          onConnected: (connectedMembershipPairEntries) {
-            membershipPairEntriesState.value = membershipPairEntriesState.value
-                .union(Set.from(connectedMembershipPairEntries));
-          },
-          onMembershipPairEntryCreated: (membershipPairEntry) {
-            membershipPairEntriesState.value = membershipPairEntriesState.value
-                .union(Set.from([membershipPairEntry]));
-          },
-          onMembershipPairEntryDestroyed: (membershipPairEntry) {
-            membershipPairEntriesState.value = membershipPairEntriesState.value
-                .difference(Set.from([membershipPairEntry]));
-          }),
+        cable: cable,
+        id: id,
+        onConnected: (connectedMembershipPairEntries) {
+          membershipPairEntriesState.value = membershipPairEntriesState.value
+              .union(Set.from(connectedMembershipPairEntries));
+        },
+        onMembershipPairEntryCreated: (membershipPairEntry) {
+          membershipPairEntriesState.value = membershipPairEntriesState.value
+              .union(Set.from([membershipPairEntry]));
+        },
+        onMembershipPairEntryDestroyed: (membershipPairEntry) {
+          membershipPairEntriesState.value = membershipPairEntriesState.value
+              .difference(Set.from([membershipPairEntry]));
+        },
+      ),
     );
 
     print("RoomScreen#build ${membershipPairEntriesState.value}");
@@ -46,6 +47,17 @@ class RoomScreen extends HookWidget {
     }, [roomChannel.value]);
 
     final localStreamAsyncState = useProvider(localStreamProvider);
+
+    final isMutedState = useState(false);
+    useEffect(() {
+      localStreamAsyncState.whenData((value) {
+        value.getAudioTracks().forEach((t) {
+          t.enabled = !isMutedState.value;
+        });
+      });
+
+      return null;
+    }, [localStreamAsyncState, isMutedState.value]);
 
     return Scaffold(
       appBar: AppBar(
@@ -70,6 +82,11 @@ class RoomScreen extends HookWidget {
               membershipPairEntry: membershipPairEntry,
             ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        child:
+            isMutedState.value ? Icon(Icons.volume_off) : Icon(Icons.volume_up),
+        onPressed: () => isMutedState.value = !isMutedState.value,
       ),
     );
   }
