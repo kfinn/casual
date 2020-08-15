@@ -73,7 +73,7 @@ class RoomScreen extends HookWidget {
         mainAxisSpacing: 8,
         children: [
           localStreamAsyncState.when(
-            data: (localStream) => Renderer(mediaStream: localStream),
+            data: (localStream) => Renderer(mediaStream: localStream, mirror: true),
             loading: () => Text('loading'),
             error: (_error, _stackTrace) => Text('error'),
           ),
