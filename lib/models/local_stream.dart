@@ -19,9 +19,6 @@ class LocalStream {
       }
     });
 
-    print('STREAM_ID: ${stream.id}');
-
-    // not sure if this is useful or not
     stream.getAudioTracks().forEach((t) => t..enableSpeakerphone(true));
 
     return stream;
