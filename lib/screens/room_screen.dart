@@ -84,8 +84,7 @@ class RoomScreen extends HookWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        child:
-            isMutedState.value ? Icon(Icons.volume_off) : Icon(Icons.volume_up),
+        child: isMutedState.value ? Icon(Icons.mic_off) : Icon(Icons.mic),
         onPressed: () => isMutedState.value = !isMutedState.value,
       ),
     );
