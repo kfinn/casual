@@ -20,10 +20,17 @@ dependencies:
   hooks_riverpod: any
   action_cable: any
   flutter_dotenv: ^2.1.0
+  flutter_secure_storage: ^3.3.3
+  freezed_annotation: any
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  freezed: any
+  build_runner: any
+
+dependency_overrides:
+  analyzer: '0.39.14'
 
 flutter:
   uses-material-design: true

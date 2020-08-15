@@ -1,20 +1,16 @@
-import 'dart:convert';
-
 import 'package:action_cable/action_cable.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:casual/auth.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 final cableProvider = Provider<ActionCable>((ref) {
-  final env = DotEnv().env;
+  final auth = ref.watch(authProvider.state);
+  final token =
+      auth.maybeWhen(authenticated: (token) => token, orElse: () => null);
 
-  final authCredentials = base64Encode(
-    utf8.encode('${env["USERNAME"]}:${env["PASSWORD"]}'),
-  );
-
-  return ActionCable.Connect(
+  final cable = ActionCable.Connect(
     'wss://cajzh.herokuapp.com/cable',
     headers: {
-      'Authorization': 'Basic $authCredentials',
+      'Authorization': token,
       'Origin': 'https://cajzh.herokuapp.com',
     },
     onConnected: () {
@@ -27,4 +23,8 @@ final cableProvider = Provider<ActionCable>((ref) {
       print('cannot connect');
     },
   );
+
+  ref.onDispose(() => cable.disconnect());
+
+  return cable;
 });

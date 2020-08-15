@@ -1,3 +1,4 @@
+import 'package:casual/auth.dart';
 import 'package:casual/local_stream_provider.dart';
 import 'package:casual/renderer.dart';
 import 'package:flutter/material.dart';
@@ -21,21 +22,20 @@ class RoomScreen extends HookWidget {
         useState<Set<MembershipPairEntry>>(Set.identity());
     final roomChannel = useState(
       RoomChannel(
-        cable: cable,
-        id: id,
-        onConnected: (connectedMembershipPairEntries) {
-          membershipPairEntriesState.value = membershipPairEntriesState.value
-              .union(Set.from(connectedMembershipPairEntries));
-        },
-        onMembershipPairEntryCreated: (membershipPairEntry) {
-          membershipPairEntriesState.value = membershipPairEntriesState.value
-              .union(Set.from([membershipPairEntry]));
-        },
-        onMembershipPairEntryDestroyed: (membershipPairEntry) {
-          membershipPairEntriesState.value = membershipPairEntriesState.value
-              .difference(Set.from([membershipPairEntry]));
-        }
-      ),
+          cable: cable,
+          id: id,
+          onConnected: (connectedMembershipPairEntries) {
+            membershipPairEntriesState.value = membershipPairEntriesState.value
+                .union(Set.from(connectedMembershipPairEntries));
+          },
+          onMembershipPairEntryCreated: (membershipPairEntry) {
+            membershipPairEntriesState.value = membershipPairEntriesState.value
+                .union(Set.from([membershipPairEntry]));
+          },
+          onMembershipPairEntryDestroyed: (membershipPairEntry) {
+            membershipPairEntriesState.value = membershipPairEntriesState.value
+                .difference(Set.from([membershipPairEntry]));
+          }),
     );
 
     print("RoomScreen#build ${membershipPairEntriesState.value}");
@@ -50,6 +50,9 @@ class RoomScreen extends HookWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('casual'),
+        actions: [
+          LogoutButton(),
+        ],
       ),
       body: GridView.count(
         scrollDirection: Axis.horizontal,
@@ -68,6 +71,18 @@ class RoomScreen extends HookWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+class LogoutButton extends StatelessWidget {
+  const LogoutButton({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return FlatButton(
+      child: Text('Log out'),
+      onPressed: () => context.read(authProvider).clearToken(),
     );
   }
 }
