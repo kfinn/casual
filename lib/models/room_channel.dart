@@ -27,7 +27,6 @@ class RoomChannel {
       onDisconnected: () => print('disconnected from room $id'),
       onMessage: (message) async {
         final payload = message['payload'];
-        print(message);
         switch (message['event']) {
           case 'connected':
             final membershipPairEntries = payload['membership_pair_entries']

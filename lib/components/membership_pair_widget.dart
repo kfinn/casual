@@ -1,5 +1,6 @@
 import 'package:casual/components/renderer.dart';
 import 'package:casual/models/cable_provider.dart';
+import 'package:casual/models/is_muted.dart';
 import 'package:casual/models/membership_pair_channel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -94,10 +95,10 @@ class MembershipPairWidget extends HookWidget {
     }, [membershipPairChannelState.value]);
 
     final peerConnectionState = useState<RTCPeerConnection>(null);
+    final localStreamState = useState<MediaStream>(null);
     final remoteStreamState = useState<MediaStream>(null);
 
     final onIceCandidate = (RTCIceCandidate iceCandidate) {
-      print('onIceCandidate: ${iceCandidate.candidate}');
       membershipPairChannelState.value.createWebRtcIceCandidate(
           sdp: iceCandidate.candidate,
           sdpMid: iceCandidate.sdpMid,
@@ -105,7 +106,6 @@ class MembershipPairWidget extends HookWidget {
     };
 
     final onAddStream = (MediaStream stream) {
-      print('onAddStream: ${stream.id}');
       remoteStreamState.value = stream;
     };
 
@@ -124,6 +124,7 @@ class MembershipPairWidget extends HookWidget {
         peerConnection.onAddStream = onAddStream;
 
         peerConnectionState.value = peerConnection;
+        localStreamState.value = localStream;
       });
 
       return () => peerConnectionState.value?.dispose();
@@ -136,7 +137,6 @@ class MembershipPairWidget extends HookWidget {
       }
 
       () async {
-        print('createOffer');
         final offer = await peerConnection.createOffer(SESSION_CONSTRAINTS);
         await peerConnection.setLocalDescription(
           RTCSessionDescription(offer.sdp, offer.type),
@@ -155,7 +155,6 @@ class MembershipPairWidget extends HookWidget {
       }
 
       () async {
-        print('createAnswer');
         await peerConnection.setRemoteDescription(
           RTCSessionDescription(remoteWebRtcOffer.sdp, 'offer'),
         );
@@ -179,7 +178,6 @@ class MembershipPairWidget extends HookWidget {
       }
 
       () async {
-        print('receivedAnswer');
         await peerConnection.setRemoteDescription(
           RTCSessionDescription(remoteWebRtcAnswer.sdp, 'answer'),
         );
@@ -196,7 +194,6 @@ class MembershipPairWidget extends HookWidget {
       }
 
       if (!hasRemoteDescriptionState.value) {
-        print("received ice candiates before a remote description");
         return;
       }
 
@@ -207,7 +204,6 @@ class MembershipPairWidget extends HookWidget {
             addedRemoteWebRtcIceCandidatesState.value
                 .union(remoteWebRtcIceCandidatesState.value);
         await Future.wait(webRtcIceCandidatesToAdd.map((webRtcIceCandidate) {
-          print("addCandidate $webRtcIceCandidate");
           return peerConnection.addCandidate(RTCIceCandidate(
               webRtcIceCandidate.sdp,
               webRtcIceCandidate.sdpMid,
@@ -221,6 +217,16 @@ class MembershipPairWidget extends HookWidget {
       hasRemoteDescriptionState.value,
       remoteWebRtcIceCandidatesState.value
     ]);
+
+    final isMuted = useProvider(isMutedProvider).state;
+    useEffect(() {
+      if (localStreamState.value != null) {
+        localStreamState.value.getAudioTracks().forEach((t) {
+          t.enabled = !isMuted;
+        });
+      }
+      return null;
+    }, [isMuted, localStreamState.value]);
 
     return Renderer(mediaStream: remoteStreamState.value);
   }

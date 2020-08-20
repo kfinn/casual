@@ -19,7 +19,7 @@ class LocalStream {
       }
     });
 
-    stream.getAudioTracks().forEach((t) => t..enableSpeakerphone(true));
+    stream.getAudioTracks().forEach((t) => t.enableSpeakerphone(true));
 
     return stream;
   }

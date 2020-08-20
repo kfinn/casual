@@ -1,5 +1,6 @@
 import 'package:casual/components/logout_button.dart';
 import 'package:casual/components/renderer.dart';
+import 'package:casual/models/is_muted.dart';
 import 'package:casual/models/local_stream.dart';
 import 'package:casual/models/membership_pair_entry.dart';
 import 'package:flutter/material.dart';
@@ -40,8 +41,6 @@ class RoomScreen extends HookWidget {
       ),
     );
 
-    print("RoomScreen#build ${membershipPairEntriesState.value}");
-
     useEffect(() {
       roomChannel.value.subscribe();
       return () => roomChannel.value.unsubscribe();
@@ -56,16 +55,16 @@ class RoomScreen extends HookWidget {
       return null;
     }, []);
 
-    final isMutedState = useState(false);
+    final isMutedState = useProvider(isMutedProvider);
     useEffect(() {
       localStreamAsyncState.value.whenData((value) {
         value.getAudioTracks().forEach((t) {
-          t.enabled = !isMutedState.value;
+          t.enabled = !isMutedState.state;
         });
       });
 
       return null;
-    }, [localStreamAsyncState.value, isMutedState.value]);
+    }, [localStreamAsyncState.value, isMutedState.state]);
 
     return Scaffold(
       appBar: AppBar(
@@ -95,8 +94,8 @@ class RoomScreen extends HookWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        child: isMutedState.value ? Icon(Icons.mic_off) : Icon(Icons.mic),
-        onPressed: () => isMutedState.value = !isMutedState.value,
+        child: isMutedState.state ? Icon(Icons.mic_off) : Icon(Icons.mic),
+        onPressed: () => isMutedState.state = !isMutedState.state,
       ),
     );
   }
